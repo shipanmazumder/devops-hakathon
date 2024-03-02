@@ -3,6 +3,8 @@ const { registerInstrumentations } = require("@opentelemetry/instrumentation");
 const {
     ExpressInstrumentation,
 } = require("@opentelemetry/instrumentation-express");
+const { MongoDBInstrumentation } = require('@opentelemetry/instrumentation-mongodb');
+const { MySQLInstrumentation } = require('@opentelemetry/instrumentation-mysql');
 const { JaegerExporter } = require("@opentelemetry/exporter-jaeger");
 const { BatchSpanProcessor } = require("@opentelemetry/tracing");
 const { Resource } = require("@opentelemetry/resources");
@@ -38,6 +40,9 @@ function configureOpenTelemetry(serviceName) {
         instrumentations: [
             new ExpressInstrumentation(),
             new RedisInstrumentation(),
+            new MongoDBInstrumentation(),
+            new MySQLInstrumentation()
+
         ],
     });
 

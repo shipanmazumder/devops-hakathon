@@ -7,6 +7,7 @@ const port = process.env.PORT || 4000;
 const { trace, context, propagation } = require("@opentelemetry/api");
 const tracerProvider = configureOpenTelemetry("user-service");
 const axios = require("axios");
+var uniqid = require('uniqid');
 
 app.use((req, res, next) => {
     const tracer = tracerProvider.getTracer("express-tracer");
@@ -27,7 +28,8 @@ app.get("/feed", async (req, res) => {
     const parentSpan = trace.getSpan(context.active());
 
     try {
-        const getFeeds = await axios.get(`http://backend:4001`, {
+        // let userId =
+        const getFeeds = await axios.get(`http://backend:4001?userId=${uniqid()}&feedId=${uniqid()}`, {
             headers: req.headers,
         });
         res.json(getFeeds.data).status(200);

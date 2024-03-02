@@ -18,13 +18,36 @@ services:
       context: ./services/backend
     container_name: backend
     ports: 
-      - 4002:4002
+      - 4001:4001
     volumes:
       - .:/backend:/usr/src/app
       - /usr/src/app/node_modules
     depends_on: 
       - mysql_server
       - mongo
+  mongodb:
+    build: 
+      context: ./services/mongodb
+    container_name: mongodb
+    ports: 
+      - 4002:4002
+    volumes:
+      - .:/mongodb:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on: 
+      - mysql_server
+      - mongo
+  mysqldb:
+    build: 
+      context: ./services/mysqldb
+    container_name: mysqldb
+    ports: 
+      - 4003:4003
+    volumes:
+      - .:/mysqldb:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on: 
+      - mysql_server
   
   mysql_server:
     image: mysql:8.0
@@ -71,5 +94,6 @@ volumes:
   backend: {}
   mongo: {}
   mysql-data: {}
+  mysqldb: {}
 
     

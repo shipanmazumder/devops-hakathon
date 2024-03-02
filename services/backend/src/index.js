@@ -6,13 +6,41 @@ const app = express();
 const port = process.env.PORT || 4001;
 const { trace, context, propagation } = require("@opentelemetry/api");
 const tracerProvider = configureOpenTelemetry("backend-service");
+const axios = require("axios");
 app.get("/", async (req, res) => {
     const ctx = propagation.extract(context.active(), req.headers);
     const tracer = tracerProvider.getTracer("express-tracer");
     const span = tracer.startSpan("backend-span", {}, ctx);
 
     try {
-        res.json({ data: "Data from backend" }).status(200);
+        const mongoSpan = tracer.startSpan("mongo-start-span", {}, ctx);
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        const getFeeds = await axios.get(`http://mongodb:4002`, {
+            headers: req.headers,
+        });
+        console.log(getFeeds.data.code);
+        mongoSpan.end();
+        if (getFeeds.data.code == 200) {
+            let userId = req.query.userId;
+            let feedId = req.query.feedId;
+            let visitTime = Date.now();
+            const mysqlSpan = tracer.startSpan("mysql-start-span", {}, ctx);
+            // const vistiAdd = await axios.post(`http://mysqldb:4003/addVisit`, { userId: userId, feedId: feedId, visitTime: visitTime }, {
+            //     headers: req.headers,
+            // });
+            return axios.get(`http://mysqldb:4003/addVisit`, { headers: req.headers }).then((result) => {
+                mysqlSpan.addEvent(result)
+                res.json(result.data).status(200);
+                // mysqlSpan.end();
+            }).catch(err => {
+                console.log(err.message)
+            }).finally(() => {
+                mysqlSpan.end();
+            });
+
+        }
+        res.json(getFeeds.data).status(200);
+        // res.json({ data: "Data from backend" }).status(200);
     } catch (error) {
         span.recordException(error)
         res.status(500).send(error.message);
