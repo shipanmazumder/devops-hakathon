@@ -20,26 +20,33 @@ app.get("/", async (req, res, next) => {
     try {
         let cacheKey = "feeds";
         let result = await getValueByKey(cacheKey, ctx);
-        if (result) {
+        console.log(result);
+        if (result != null && result.length > 0) {
+            console.log("Data load from cache")
+            span.setAttribute("rediscache", "Data Show from Catche");
+            span.addEvent("Data Show from Catche");
             return getResultFormat(res, next, JSON.parse(result));
-        }
-        let feeds = await Feed.find()
-            .sort([['createdAt', -1]]);
-        if (!feeds) {
+        } else {
+            let feeds = await Feed.find()
+                .sort([['createdAt', -1]]);
+            if (!feeds) {
+                let data = {
+                    code: 404,
+                    message: "No Feeds Found",
+                    data: null,
+                };
+                return getResultFormat(res, next, data);
+            }
+
+            span.setAttribute("rediscache", "Data Show from DB");
             let data = {
-                code: 404,
-                message: "No Feeds Found",
-                data: null,
+                code: 200,
+                message: "All Feeds",
+                data: feeds,
             };
+            await setKeyValue(cacheKey, JSON.stringify(data), ctx);
             return getResultFormat(res, next, data);
         }
-        await setKeyValue(cacheKey, JSON.stringify(feeds), ctx);
-        let data = {
-            code: 200,
-            message: "All Feeds",
-            data: feeds,
-        };
-        return getResultFormat(res, next, data);
 
     } catch (error) {
         span.recordException(error)

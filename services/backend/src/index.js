@@ -14,23 +14,22 @@ app.get("/", async (req, res) => {
 
     try {
         const mongoSpan = tracer.startSpan("mongo-start-span", {}, ctx);
-        await new Promise(resolve => setTimeout(resolve, 3000))
+        // await new Promise(resolve => setTimeout(resolve, 3000))
         const getFeeds = await axios.get(`http://mongodb:4002`, {
             headers: req.headers,
         });
-        console.log(getFeeds.data.code);
         mongoSpan.end();
-        if (getFeeds.data.code == 200) {
-            let userId = req.query.userId;
-            let feedId = req.query.feedId;
-            let visitTime = Date.now();
+        if (getFeeds != null && getFeeds.data.code == 200) {
+            // let userId = req.query.userId;
+            // let feedId = req.query.feedId;
+            // let visitTime = Date.now();
             const mysqlSpan = tracer.startSpan("mysql-start-span", {}, ctx);
             // const vistiAdd = await axios.post(`http://mysqldb:4003/addVisit`, { userId: userId, feedId: feedId, visitTime: visitTime }, {
             //     headers: req.headers,
             // });
             return axios.get(`http://mysqldb:4003/addVisit`, { headers: req.headers }).then((result) => {
-                mysqlSpan.addEvent(result)
-                res.json(result.data).status(200);
+                mysqlSpan.addEvent("Data Saved")
+                res.json(getFeeds.data).status(200);
                 // mysqlSpan.end();
             }).catch(err => {
                 console.log(err.message)
@@ -38,8 +37,9 @@ app.get("/", async (req, res) => {
                 mysqlSpan.end();
             });
 
+        } else {
+            res.json(getFeeds.data).status(200);
         }
-        res.json(getFeeds.data).status(200);
         // res.json({ data: "Data from backend" }).status(200);
     } catch (error) {
         span.recordException(error)
@@ -49,6 +49,46 @@ app.get("/", async (req, res) => {
     }
 });
 
+const amqp = require('amqplib');
+
+const connectAndListen = async () => {
+    const connection = await amqp.connect('amqp://rabbitmq');
+    const channel = await connection.createChannel();
+    const exchange = 'orderExchange';
+    const queue = 'orderQueue';
+
+    // Assert the exchange and queue
+    await channel.assertExchange(exchange, 'direct', { durable: false });
+    await channel.assertQueue(queue, { durable: false });
+
+    // Bind the queue to the exchange with the routing key 'orderCreated'
+    await channel.bindQueue(queue, exchange, 'orderCreated');
+
+    console.log(`Waiting for "order created" events. To exit press CTRL+C`);
+
+    // Consume messages from the queue
+    channel.consume(queue, (msg) => {
+        if (msg !== null) {
+            // const rabitTracerProvider = configureOpenTelemetry("rabit-service")
+            const eventData = JSON.parse(msg.content.toString());
+            const headers = msg.properties.headers;
+
+            const ctx = propagation.extract(context.active(), headers);
+            const rabitTracer = tracerProvider.getTracer("express-tracer");
+            const rabitSpan = rabitTracer.startSpan("rabit-consume-span", {}, ctx);
+            console.log(`Received "order created" event:`, eventData);
+            rabitSpan.end();
+
+            // Handle the order creation logic here
+            // ...
+
+            // Acknowledge the message
+            channel.ack(msg);
+        }
+    });
+};
+
+// connectAndListen();
 // Start the server
 const server = app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
