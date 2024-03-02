@@ -1,0 +1,75 @@
+version: "3.8"
+
+services: 
+  user:
+    build: 
+      context: ./services/user
+    container_name: user
+    ports: 
+      - 4000:4000
+    volumes:
+      - .:/user:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on: 
+      - mysql_server
+      - mongo
+  backend:
+    build: 
+      context: ./services/backend
+    container_name: backend
+    ports: 
+      - 4002:4002
+    volumes:
+      - .:/backend:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on: 
+      - mysql_server
+      - mongo
+  
+  mysql_server:
+    image: mysql:8.0
+    environment: 
+      - MYSQL_DATABASE=visit_feeds
+      - MYSQL_USER=shipan
+      - MYSQL_PASSWORD=secret
+      - MYSQL_ROOT_PASSWORD=secret
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - 15672:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+  redis:
+    image: "redis:alpine"
+    expose:
+     - "6379"
+    ports:
+     - "6379:6379"
+    container_name: redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 2s
+      retries: 10
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    
+  mongo:
+    restart: always
+    image: mongo
+    volumes:
+      - mongo:/data/db
+    expose:
+      - 27017
+
+volumes:
+  user: {}
+  backend: {}
+  mongo: {}
+  mysql-data: {}
+
+    
