@@ -9,6 +9,8 @@ const tracerProvider = configureOpenTelemetry("user-service");
 const axios = require("axios");
 var uniqid = require('uniqid');
 const amqp = require('amqplib');
+const morgan = require("morgan");
+app.use(morgan("dev"));
 
 app.use((req, res, next) => {
     const tracer = tracerProvider.getTracer("express-tracer");
@@ -23,6 +25,7 @@ app.use((req, res, next) => {
         next();
     });
 });
+
 
 
 
@@ -51,6 +54,8 @@ app.get("/feed", async (req, res) => {
     const parentSpan = trace.getSpan(context.active());
 
     try {
+        // await new Promise(res)
+        // await new Promise(resolve => setTimeout(resolve, 3000)) should use for custom dealy
         const rabitTracer = tracerProvider.getTracer("express-tracer");
         const rabitSpan = rabitTracer.startSpan("rabit-start-span", {}, context.active())
         let carrers = {}

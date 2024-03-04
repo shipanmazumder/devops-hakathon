@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.4
 
 FROM node:18-alpine
+
 # Create app directory
 WORKDIR /usr/src/app
 COPY package.json /usr/src/app/package.json

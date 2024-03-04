@@ -6,6 +6,9 @@ const tracerProvider = configureOpenTelemetry("mysql-service");
 const dotenv = require("dotenv").config();
 
 const app = express()
+
+const morgan = require("morgan");
+app.use(morgan("dev"));
 const mysql = require('mysql2');
 
 const mysqlConfig = {

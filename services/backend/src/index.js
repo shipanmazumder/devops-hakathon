@@ -7,6 +7,9 @@ const port = process.env.PORT || 4001;
 const { trace, context, propagation } = require("@opentelemetry/api");
 const tracerProvider = configureOpenTelemetry("backend-service");
 const axios = require("axios");
+
+const morgan = require("morgan");
+app.use(morgan("dev"));
 app.get("/", async (req, res) => {
     const ctx = propagation.extract(context.active(), req.headers);
     const tracer = tracerProvider.getTracer("express-tracer");
@@ -88,7 +91,7 @@ const connectAndListen = async () => {
     });
 };
 
-// connectAndListen();
+connectAndListen();
 // Start the server
 const server = app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);

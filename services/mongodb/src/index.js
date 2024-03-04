@@ -12,6 +12,9 @@ const Feed = require("./Model/Feed");
 const { getResultFormat, errorResponse } = require("./util/ResponseUtil");
 const { setKeyValue, getValueByKey, deleteCacheKey } = require("./redis/RedisSetup");
 
+const morgan = require("morgan");
+app.use(morgan("dev"));
+
 app.get("/", async (req, res, next) => {
     const ctx = propagation.extract(context.active(), req.headers);
     const tracer = tracerProvider.getTracer("express-tracer");
