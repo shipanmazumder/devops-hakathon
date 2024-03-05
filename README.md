@@ -1,4 +1,4 @@
-# DevOps Hackathon Project
+# DevOps Hackathon Project with Opentelemetry Tracing
 
 Welcome to the DevOps Hackathon project repository. This project aims to showcase a set of microservices implemented in Node.js and integrated with OpenTelemetry for observability and tracing.
 
